@@ -201,12 +201,15 @@
             distance_meter = 0 + Math.abs(danwe_gijun - distance_meter);
             pay.innerHTML = pay_total.toLocaleString();
             danwe_mode = 1;
-        }
 
-        let danwe_current = Math.floor(danwe_gijun - distance_meter)
-        if(danwe_current !== danwe_prev_value){
-            animate(document.getElementById('danwe'), danwe_prev_value, danwe_current, 1000);
-            danwe_prev_value = danwe_current
+            danwe_prev_value = DANWE;
+            document.getElementById('danwe').innerHTML = DANWE.toLocaleString();
+        }else{
+            let danwe_current = Math.floor(danwe_gijun - distance_meter)
+            if(danwe_current !== danwe_prev_value){
+                animate(document.getElementById('danwe'), danwe_prev_value, danwe_current, 1000);
+                danwe_prev_value = danwe_current
+            }
         }
     }
 
