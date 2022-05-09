@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="nosleep.js"></script>
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        .number {
+            font-family: 'Seven Segment Regular', serif;
+        }
+
+        body {
+            background-color: black;
+        }
+
+        * {
+            color: white;
+        }
+
+        /* The Modal (background) */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgb(0,0,0); /* Fallback color */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+
+        /* Modal Content/Box */
+        .modal-content {
+            background-color: #000000;
+            /* 15% from the top and centered */
+            margin: 10em auto 10%;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; /* Could be more or less, depending on screen size */
+        }
+
+        /* The Close Button */
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<table width="100%">
+    <thead>
+    <tr>
+        <th colspan="2" style="font-size: 3em;" class="number" id="clock">MISCTHINGS TAXI</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <th colspan="2" style="font-size: 4em; padding-bottom: 1em;" class="number" id="status_html">STOP</th>
+    </tr>
+    <tr>
+        <td class="number" style="font-size: 3.6em; text-align: left;" id="hal_html">0%</td>
+        <td class="number" style="font-size: 4em; color: lightsalmon; text-align: right;" id="danwe">-</td>
+
+    </tr>
+    <tr>
+        <td colspan="2" style="text-align: right; padding-bottom: 4em;">
+            <span style="font-size: 4.5em; font-weight: bold; color: #62e762" class="number"
+                  id="pay">-</span>
+            <span style="font-size: 2em; color: gray ">￦</span></td>
+    </tr>
+    <tr>
+        <td onclick="run_meter();" id="drive_btn" style="width:50%; font-size: 3em; font-weight: 100; height: 100px; text-align: center; background-color: #363b2a">주행
+        </td>
+        <td onclick="change_hal();" style="width:50%; font-size: 3em; font-weight: 100; height: 100px; text-align: center; background-color: #462727">할증
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+<div id="myModal" class="modal">
+
+    <!-- Modal content -->
+    <div class="modal-content">
+        <span class="close">&times;</span>
+
+        <div style="width: 100%; text-align: center">
+            <div style="font-size: 4em;">요금</div>
+            <span style="font-size: 4em; font-weight: bold; color: #62e762" class="number"
+                  id="pay1">9,999,999</span>
+            <span style="font-size: 1em; color: gray ">￦</span>
+        </div>
+    </div>
+
+</div>
+
+<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+<div>
+    <button onclick="nosleep()">화면켜짐</button>
+</div>
+
+<div id="distance_meter_htm"></div>
+<div>/</div>
+<div id="dst_result"></div>
+
+
+<div id="geoinfo"></div>
+
+
+<div id="log">
+    dd
+</div>
+<script>
+    var noSleep = new NoSleep();
+
+    function nosleep(){
+        noSleep.enable();
+    }
+</script>
+<script>
+    let enable = false;
+    let timer = null;
+
+    let last_long_lat = null;
+
+    let distance_meter = 0;
+
+    const DEFAULT_PAY = 3200;
+
+    const DANWE_DEFAULT = 2000;
+    const DANWE = 142;
+    let danwe_mode = 0
+
+    let hal = 0;
+    const hal_array = [0, 20, 50, 100]
+    let hal_idx = 0;
+    let status = 0;
+    const status_text = ["STOP", "DRIVE"]
+
+    const drive_btn_text = ["주행", "정지"]
+
+    let pay_total = DEFAULT_PAY;
+</script>
+
+<script>
+    function change_hal(){
+        if(hal_idx === hal_array.length - 1){
+            hal_idx = 0;
+        }else{
+            hal_idx += 1;
+        }
+
+        hal = hal_array[hal_idx];
+        hal_html.innerHTML = hal + "%"
+    }
+
+    function run_meter() {
+        status = status === 1 ? 0 : 1;
+
+        status_html.innerHTML = status_text[status];
+        drive_btn.innerHTML = drive_btn_text[status];
+
+        if(status === 1){
+            timer = setInterval(acc_distance, 100);
+            distance_meter = 0;
+            danwe_mode = 0;
+            pay_total = DEFAULT_PAY;
+            pay.innerHTML = DEFAULT_PAY.toLocaleString();
+            hal = hal_array[hal_idx];
+            hal_html.innerHTML = hal + "%"
+        }else{
+            showmodal();
+            clearInterval(timer);
+            pay1.innerHTML = pay_total.toLocaleString()
+            pay_total = DEFAULT_PAY;
+            danwe_mode = 0;
+            // pay.innerHTML = DEFAULT_PAY.toLocaleString();
+        }
+    }
+
+    function acc_distance() {
+        let danwe_gijun = danwe_mode === 0 ? DANWE_DEFAULT : DANWE;
+
+        if(danwe_gijun - distance_meter < 0){
+            pay_total += (100 * (1 + (hal / 100)));
+            distance_meter = 0 + Math.abs(danwe_gijun - distance_meter);
+            pay.innerHTML = pay_total.toLocaleString();
+            danwe_mode = 1;
+        }else{
+            danwe.innerHTML = (danwe_gijun - distance_meter).toLocaleString()
+        }
+    }
+</script>
+<script>
+    // Get the modal
+    var modal = document.getElementById("myModal");
+
+    // Get the <span> element that closes the modal
+    var span = document.getElementsByClassName("close")[0];
+
+    // When the user clicks on the button, open the modal
+    function showmodal() {
+        modal.style.display = "block";
+    }
+
+    // When the user clicks on <span> (x), close the modal
+    span.onclick = function() {
+        modal.style.display = "none";
+    }
+
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function(event) {
+        if (event.target === modal) {
+            modal.style.display = "none";
+        }
+    }
+
+    window.ontouchend = function(event) {
+        if (event.target === modal) {
+            modal.style.display = "none";
+        }
+    }
+
+</script>
+<script>
+    getLocation()
+
+    function getLocation() {
+        // Get location no more than 10 minutes old. 600000 ms = 10 minutes.
+        navigator.geolocation.watchPosition(accLocation, showError, {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+        });
+    }
+
+    function showError(error) {
+        alert(error.code + ' ' + error.message);
+    }
+
+    function accLocation(position) {
+        enable = true
+        log.innerHTML = geoinfo.innerHTML + "0"
+        geoinfo.innerHTML = '<p>Latitude: ' + position.coords.latitude + '</p>'
+            + '<p>Longitude: ' + position.coords.longitude + '</p>'
+            + '<p>Accuracy: ' + position.coords.accuracy + '</p>'
+            + '<p>Altitude: ' + position.coords.altitude + '</p>'
+            + '<p>Altitude accuracy: ' + position.coords.altitudeAccuracy + '</p>'
+            + '<p>Speed: ' + position.coords.speed + '</p>'
+            + '<p>Heading: ' + position.coords.heading + '</p>'
+            + '<p>Heading: ' + new Date() + '</p>';
+
+        if (last_long_lat === null) {
+            last_long_lat = [position.coords.longitude, position.coords.latitude]
+            return
+        } else {
+            let distance_result = Math.abs(distance(last_long_lat[0], last_long_lat[1], position.coords.longitude, position.coords.latitude))
+            last_long_lat = [position.coords.longitude, position.coords.latitude]
+
+            dst_result.innerHTML = distance_result
+            distance_meter_htm.innerHTML = distance_meter
+
+            if (distance_result < 3) {
+                return;
+            }
+
+            distance_meter += Math.round(distance_result)
+        }
+
+        return [position.coords.latitude, position.coords.longitude]
+    }
+
+    if (navigator.geolocation) {
+        document.write('<p><input type="button" onclick="getLocation()" value="Show Geolocation Information" /></p>');
+
+    } else {
+        document.write('<p>Sorry, your device or browser software does not appear to support geolocation services.</p>');
+        enable = false;
+    }
+
+    function distance(lon1, lat1, lon2, lat2) {
+        var R = 6371008; // Radius of the earth in meter
+        var dLat = (lat2 - lat1).toRad();  // Javascript functions in radians
+        var dLon = (lon2 - lon1).toRad();
+        var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1.toRad()) * Math.cos(lat2.toRad()) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return R * c;
+    }
+
+    /** Converts numeric degrees to radians */
+    if (typeof (Number.prototype.toRad) === "undefined") {
+        Number.prototype.toRad = function () {
+            return this * Math.PI / 180;
+        }
+    }
+
+    window.navigator.geolocation.getCurrentPosition(function (pos) {
+        console.log(pos);
+        console.log(
+            distance(pos.coords.longitude, pos.coords.latitude, 42.37, 71.03)
+        );
+    });
+</script>
+
+</body>
+</html>
