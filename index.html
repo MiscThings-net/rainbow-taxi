@@ -141,7 +141,7 @@
 
     const DEFAULT_PAY = 3200;
 
-    const DANWE_DEFAULT = 2000;
+    const DANWE_FIRST = 2000;
     const DANWE = 142;
     let danwe_mode = 0
 
@@ -182,6 +182,9 @@
             pay.innerHTML = DEFAULT_PAY.toLocaleString();
             hal = hal_array[hal_idx];
             hal_html.innerHTML = hal + "%"
+
+            danwe_prev_value = DANWE_FIRST;
+            document.getElementById('danwe').innerHTML = DANWE_FIRST.toLocaleString();
         }else{
             showmodal();
             clearInterval(timer);
@@ -194,7 +197,7 @@
 
     let danwe_prev_value = 0;
     function acc_distance() {
-        let danwe_gijun = danwe_mode === 0 ? DANWE_DEFAULT : DANWE;
+        let danwe_gijun = danwe_mode === 0 ? DANWE_FIRST : DANWE;
 
         if(danwe_gijun - distance_meter < 0){
             pay_total += (100 * (1 + (hal / 100)));
