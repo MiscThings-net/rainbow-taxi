@@ -192,6 +192,7 @@
         }
     }
 
+    let danwe_prev_value = 0;
     function acc_distance() {
         let danwe_gijun = danwe_mode === 0 ? DANWE_DEFAULT : DANWE;
 
@@ -200,9 +201,47 @@
             distance_meter = 0 + Math.abs(danwe_gijun - distance_meter);
             pay.innerHTML = pay_total.toLocaleString();
             danwe_mode = 1;
-        }else{
-            danwe.innerHTML = (danwe_gijun - distance_meter).toLocaleString()
         }
+
+        let danwe_current = Math.floor(danwe_gijun - distance_meter)
+        if(danwe_current !== danwe_prev_value){
+            animate(document.getElementById('danwe'), danwe_prev_value, danwe_current, 1000);
+            danwe_prev_value = danwe_current
+        }
+    }
+
+    function animate(obj, initVal, lastVal, duration) {
+
+        let startTime = null;
+
+        //get the current timestamp and assign it to the currentTime variable
+        let currentTime = Date.now();
+
+        //pass the current timestamp to the step function
+        const step = (currentTime ) => {
+
+            //if the start time is null, assign the current time to startTime
+            if (!startTime) {
+                startTime = currentTime ;
+            }
+
+            //calculate the value to be used in calculating the number to be displayed
+            const progress = Math.min((currentTime  - startTime) / duration, 1);
+
+            //calculate what to be displayed using the value gotten above
+            obj.innerHTML = Math.floor(progress * (lastVal - initVal) + initVal).toLocaleString();
+
+            //checking to make sure the counter does not exceed the last value (lastVal)
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            }
+            else{
+                window.cancelAnimationFrame(window.requestAnimationFrame(step));
+            }
+        };
+
+        //start animating
+        window.requestAnimationFrame(step);
     }
 </script>
 <script>
@@ -278,7 +317,7 @@
                 return;
             }
 
-            distance_meter += Math.round(distance_result)
+            distance_meter += distance_result
         }
 
         return [position.coords.latitude, position.coords.longitude]
