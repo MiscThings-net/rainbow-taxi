@@ -41,7 +41,7 @@
         .modal-content {
             background-color: #000000;
             /* 15% from the top and centered */
-            margin: 10em auto 10%;
+            margin: 10% auto;
             padding: 20px;
             border: 1px solid #888;
             width: 80%; /* Could be more or less, depending on screen size */
@@ -76,12 +76,12 @@
         <th colspan="2" style="font-size: 4em; padding-bottom: 1em;" class="number" id="status_html">STOP</th>
     </tr>
     <tr>
-        <td class="number" style="font-size: 3.6em; text-align: left;" id="hal_html">888,888</td>
+        <td class="number" style="font-size: 3.6em; text-align: left;" onclick="change_hal();"  id="hal_html">888,888</td>
         <td class="meter" style="font-size: 4em; color: lightsalmon; text-align: right;" id="danwe">8888</td>
 
     </tr>
     <tr>
-        <td colspan="2" style="text-align: right; padding-bottom: 4em;">
+        <td colspan="2" style="text-align: right; padding-bottom: 4em;" onclick="run_meter();" >
             <span style="font-size: 6em; font-weight: bold; color: #62e762" class="number"
                   id="pay">888,888</span>
             <span style="font-size: 2em; color: gray ">￦</span></td>
@@ -224,11 +224,12 @@
     }
 
     function update_trip(){
-        hal_html.innerHTML = trip_meter.toLocaleString();
+        hal_html.innerHTML = Math.round(trip_meter).toLocaleString();
     }
 
     let danwe_prev_value = 0;
-
+    const ANIMATION_DURATION_DEFAULT = 1000;
+    let animation_allow_start_at = 0;
     function acc_distance() {
         let danwe_gijun = danwe_mode === 0 ? DANWE_FIRST : DANWE;
 
@@ -243,8 +244,9 @@
         }
 
         let danwe_current = Math.floor(danwe_gijun - distance_meter)
-        if (danwe_current !== danwe_prev_value) {
-            let animation_duration = 500;
+        let now = (new Date()).valueOf();
+        if (danwe_current !== danwe_prev_value && animation_allow_start_at < now) {
+            let animation_duration = ANIMATION_DURATION_DEFAULT;
 
             // 현재 값이 더 크면 애니메이션 발동 X
             if (danwe_current > danwe_prev_value) {
@@ -252,10 +254,9 @@
             }
 
             animate(document.getElementById('danwe'), danwe_prev_value, danwe_current, animation_duration);
+            animation_allow_start_at = now + animation_duration;
             danwe_prev_value = danwe_current
         }
-
-
     }
 
     function animate(obj, initVal, lastVal, duration) {
