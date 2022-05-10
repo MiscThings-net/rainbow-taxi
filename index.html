@@ -61,19 +61,27 @@
             text-decoration: none;
             cursor: pointer;
         }
+
+        #anim {
+            background-image: url('horse_sprite_small_small.png');
+            width: 200px;
+            height: 127px;
+            animation: anim 0.1s steps(6) infinite;
+        }
+        @keyframes anim {
+            100% { background-position: -1200px; }
+        }
     </style>
 </head>
 <body>
 
 <table width="100%">
-    <thead>
-    <tr>
-        <th colspan="2" style="font-size: 3em;" class="number" id="clock">MISCTHINGS TAXI</th>
-    </tr>
-    </thead>
     <tbody>
     <tr>
-        <th colspan="2" style="font-size: 4em; padding-bottom: 1em;" class="number" id="status_html">STOP</th>
+        <th style="font-size: 4em; text-align: center" class="number">
+            <div id="anim" style="  display: inline-block;"></div>
+        </th>
+        <th style="font-size: 4em;  vertical-align: middle" class="number" id="status_html">STOP</th>
     </tr>
     <tr>
         <td class="number" style="font-size: 3.6em; text-align: left;" onclick="change_hal();"  id="hal_html">888,888</td>
@@ -143,6 +151,7 @@
     let enable = false;
     let timer = null;
     let trip_timer = null;
+    let horse_timer = null;
 
     let last_long_lat = null;
 
@@ -170,8 +179,72 @@
     const ANIMATION_DURATION_DEFAULT = 700;
 </script>
 <script>
+    var el = document.getElementById('anim');
+    el.style.animationPlayState = 'paused';
+    function play() {
+        el.style.animationPlayState = 'running';
+    }
+    function pause() {
+        el.style.animationPlayState = 'paused';
+    }
+    function reset() {
+        el.style.animation = 'none';
+        el.offsetHeight; /* trigger reflow to apply the change immediately */
+        el.style.animation = null;
+    }
+    function stop() {
+        reset();
+        pause();
+    }
+</script>
+<script>
+    let trip_update_last_timestamp = 0;
+    let last_trips = [];
+    const TRIP_UPDATE_EXPIRE = 3000;
     function trip_meter_add(x){
         trip_meter += x;
+        trip_update_last_timestamp = (new Date()).valueOf()
+    }
+
+    function trip_meter_reset(){
+        trip_meter = 0;
+    }
+
+    let last_trip_data = 0;
+    function adjust_horse_speed(){
+        if(last_trip_data < trip_meter){
+            let diff = trip_meter - last_trip_data;
+            let speed = diff * 3.6;
+
+            last_trip_data = trip_meter;
+
+            if(speed < 5){
+                el.style.animationPlayState = 'paused'
+                return;
+            }
+
+            el.style.animationPlayState = 'running'
+            let css_speed = "0.8s"
+
+            if(speed < 32){
+                css_speed = "0.8s"
+            } else if(speed < 40){
+                css_speed = "0.6s"
+            } else if(speed < 60){
+                css_speed = "0.4s"
+            } else if(speed < 80){
+                css_speed = "0.3s"
+            } else if(speed < 100){
+                css_speed = "0.2s"
+            } else if(speed < 120){
+                css_speed = "0.1s"
+            }else{
+                css_speed = "0.1s"
+            }
+
+            console.log(speed , "kmph", css_speed)
+            document.getElementById('anim').style.animationDuration = css_speed;
+        }
     }
 
     function change_hal() {
@@ -188,13 +261,13 @@
     function dbg() {
         danwe_mode = 1;
 
-        let plus_meter = 10
+        let plus_meter = 3.6
         setInterval(function () {
             if (Math.random() > 0.8) {
                 trip_meter_add(plus_meter)
                 distance_meter += plus_meter
             }
-        }, 100)
+        }, 300)
     }
 
     function run_meter() {
@@ -205,6 +278,7 @@
 
         if (status === 1) {
             timer = setInterval(acc_distance, 100);
+            horse_timer = setInterval(adjust_horse_speed, 1000);
             distance_meter = 0;
             danwe_mode = 0;
             pay_total = DEFAULT_PAY;
@@ -214,6 +288,7 @@
             document.getElementById('danwe').innerHTML = DANWE_FIRST;
 
             // trip timer setting
+            trip_meter_reset();
             if(hal === 0){
                 trip_timer = setInterval(update_trip, 100);
             }
@@ -226,6 +301,8 @@
             // pay.innerHTML = DEFAULT_PAY.toLocaleString();
 
             clearInterval(trip_timer);
+            clearInterval(horse_timer);
+            el.style.animationPlayState = 'paused';
         }
     }
 
@@ -343,7 +420,7 @@
 
     function showError(error) {
         errorstore.innerHTML = error.code + ' ' + error.message;
-        alert( error.code + ' ' + error.message);
+        // alert( error.code + ' ' + error.message);
     }
 
     function accLocation(position) {
@@ -412,6 +489,6 @@
         );
     });
 </script>
-
+<script src="dist/gif-player.es5.js" defer async></script>
 </body>
 </html>
